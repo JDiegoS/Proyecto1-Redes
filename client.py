@@ -87,17 +87,24 @@ class Client(slixmpp.ClientXMPP):
                     if pres['status']:
                         print('        %s' % pres['status'])
     
-    def addContact(self):
+    async def addContact(self):
         addName = input("Ingrese el usuario: ")
         addNick = input("Ingrese el apodo para el contacto: ")
         try:
             self.send_presence_subscription(pfrom=self.boundjid.bare, pto=addName, ptype="subscribe", pnick=addNick)
             print("Solicitud enviada correctamente")
+            self.get_roster()
+            await asyncio.sleep(2)
         except:
             print("Error al agregar contacto")
+        
 
-    def mensajePresencia():
-        pass
+    async def presenceMessage(self):
+        show = input("Nuevo show: ")
+        status = input("Nuevo status: ")
+        self.send_presence(show, status)
+        self.get_roster()
+        await asyncio.sleep(2)
 
     def chatPersonal():
         pass
@@ -108,6 +115,7 @@ class Client(slixmpp.ClientXMPP):
     async def start(self, event):
         self.send_presence()
         self.get_roster()
+        await asyncio.sleep(2)
 
         print("\nBienvenido al programa, " + self.jid)
         sigue = True
@@ -118,12 +126,13 @@ class Client(slixmpp.ClientXMPP):
                 await self.getUsers()
             elif opc2 == 2:
                 #Agregar Contacto
-                self.addContact()
+                await self.addContact()
             elif opc2 == 3:
                 #Mostrar contacto especifico
                 await self.getSpecificUser()
             elif opc2 == 4:
-                pass
+                #Mensaje de presencia
+                await self.presenceMessage()
             elif opc2 == 5:
                 pass
             elif opc2 == 6:
