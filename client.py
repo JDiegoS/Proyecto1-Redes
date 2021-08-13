@@ -15,6 +15,7 @@ class Client(slixmpp.ClientXMPP):
         super().__init__(jid, password)
         self.add_event_handler('session_start', self.start)
         self.add_event_handler("message", self.message)
+        self.add_event_handler("groupchat_message", self.muc_message)
 
     async def getSpecificUser(self):
         uName = input("Ingrese el usuario: ")
@@ -24,9 +25,9 @@ class Client(slixmpp.ClientXMPP):
             print("Error al obtener lista")
         
         self.send_presence()
-        print('Waiting for presence updates...\n')
+        print('Buscando contactos...\n')
         #self.presences_received.wait(5)
-        await asyncio.sleep(3)
+        await asyncio.sleep(2)
         
         found = False
         groups = self.client_roster.groups()
@@ -62,7 +63,7 @@ class Client(slixmpp.ClientXMPP):
             print("Error al obtener lista")
         
         self.send_presence()
-        print('Waiting for presence updates...\n')
+        print('Buscando contactos...\n')
         #self.presences_received.wait(5)
         await asyncio.sleep(3)
         print("\nLista de usuarios:")
@@ -117,11 +118,43 @@ class Client(slixmpp.ClientXMPP):
             print("Mensaje enviado")
         except:
             print("Error al mandar mensaje")
-    async def message(self, msg):
+    
+    def message(self, msg):
         if msg['type'] in ('chat', 'normal'):
             print("\nMensaje recibido de %s:\n   %s\n" % (msg['from'], msg['body']))
+    
     async def groupChat(self):
-        pass
+        self.register_plugin('xep_0045') # Multi-User Chat
+        self.register_plugin('xep_0199') # XMPP Ping
+        opc3 = int(input("\nIngrese una opcion:\n1. Crear chat\n2. Unirse a chat\n"))
+        addr = input("Direccion del grupo (ejemplo@conference.alumchat.xyz): ")
+        name = input("Nickname: ")
+        self.plugin['xep_0045'].join_muc(room=addr, nick=name, pstatus='open', pfrom=self.boundjid.full)
+
+        if opc3 == 1:
+            await self.plugin['xep_0045'].set_affiliation(addr, jid = self.boundjid.full, affiliation = 'owner')
+            print('\nGrupo creado\n')
+        elif opc3 == 2:
+            print("Se unio correctamente")
+        self.send_presence()
+        self.get_roster()
+        await asyncio.sleep(1)
+
+    async def sendGroup(self):
+        addr = input("Direccion del grupo (ejemplo@conference.alumchat.xyz): ")
+        mssg = input("Ingrese el mensaje: ")
+        try:
+            self.send_message(mto=addr, mbody=mssg, mtype='groupchat')
+            self.send_presence()
+            self.get_roster()
+            await asyncio.sleep(1)
+            print("Mensaje enviado")
+        except:
+            print("Error al mandar mensaje")
+
+    def muc_message(self, msg):
+        if msg['type'] == 'groupchat':
+            print("\nMensaje recibido del grupo %s\n %s:\n    %s\n" % (msg['mucroom'], msg['mucnick'], msg['body']))
 
     async def start(self, event):
         self.send_presence()
@@ -131,7 +164,7 @@ class Client(slixmpp.ClientXMPP):
         print("\nBienvenido al programa, " + self.jid)
         sigue = True
         while sigue == True:
-            opc2 =  int(input("\nIngrese una opcion:\n1. Mostrar Usuarios \n2. Agregar Contacto \n3. Mostrar Usuario Especifico \n4. Mensaje de Presencia \n5. Mensaje Privado \n6. Mensaje Grupal\n7. Log out \n0. Notificaciones (mensajes recibidos, etc)\n"))
+            opc2 =  int(input("\nIngrese una opcion:\n1. Mostrar Usuarios \n2. Agregar Contacto \n3. Mostrar Usuario Especifico \n4. Mensaje de Presencia \n5. Enviar Mensaje Privado \n6. Enviar Mensaje Grupal\n7. Crear/Unirse a chat grupal\n8. Log out \n0. Notificaciones (mensajes recibidos, etc)\n"))
             if opc2 == 1:
                 #Mostrar Usuarios
                 await self.getUsers()
@@ -148,8 +181,10 @@ class Client(slixmpp.ClientXMPP):
                 #Mensaje privado
                 await self.privateChat()
             elif opc2 == 6:
-                pass
+                await self.sendGroup()
             elif opc2 == 7:
+                await self.groupChat()
+            elif opc2 == 8:
                 print("Hasta luego!")
                 self.disconnect()
                 sigue = False
