@@ -14,6 +14,7 @@ class Client(slixmpp.ClientXMPP):
     def __init__(self, jid, password):
         super().__init__(jid, password)
         self.add_event_handler('session_start', self.start)
+        self.add_event_handler("message", self.message)
 
     async def getSpecificUser(self):
         uName = input("Ingrese el usuario: ")
@@ -25,7 +26,7 @@ class Client(slixmpp.ClientXMPP):
         self.send_presence()
         print('Waiting for presence updates...\n')
         #self.presences_received.wait(5)
-        await asyncio.sleep(5)
+        await asyncio.sleep(3)
         
         found = False
         groups = self.client_roster.groups()
@@ -63,7 +64,7 @@ class Client(slixmpp.ClientXMPP):
         self.send_presence()
         print('Waiting for presence updates...\n')
         #self.presences_received.wait(5)
-        await asyncio.sleep(5)
+        await asyncio.sleep(3)
         print("\nLista de usuarios:")
         
         groups = self.client_roster.groups()
@@ -94,7 +95,7 @@ class Client(slixmpp.ClientXMPP):
             self.send_presence_subscription(pfrom=self.boundjid.bare, pto=addName, ptype="subscribe", pnick=addNick)
             print("Solicitud enviada correctamente")
             self.get_roster()
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
         except:
             print("Error al agregar contacto")
         
@@ -104,23 +105,33 @@ class Client(slixmpp.ClientXMPP):
         status = input("Nuevo status: ")
         self.send_presence(show, status)
         self.get_roster()
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
-    def chatPersonal():
-        pass
-
-    def chatGrupal():
+    async def privateChat(self):
+        uName = input("Ingrese el nombre del recipiente: ")
+        mssg = input("Ingrese el mensaje: ")
+        try:
+            self.send_message(mto=uName, mbody=mssg, mtype='chat')
+            self.get_roster()
+            await asyncio.sleep(1)
+            print("Mensaje enviado")
+        except:
+            print("Error al mandar mensaje")
+    async def message(self, msg):
+        if msg['type'] in ('chat', 'normal'):
+            print("\nMensaje recibido de %s:\n   %s\n" % (msg['from'], msg['body']))
+    async def groupChat(self):
         pass
 
     async def start(self, event):
         self.send_presence()
         self.get_roster()
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
         print("\nBienvenido al programa, " + self.jid)
         sigue = True
         while sigue == True:
-            opc2 =  int(input("\nIngrese una opcion:\n1. Mostrar Usuarios \n2. Agregar Contacto \n3. Mostrar Usuario Especifico \n4. Mensaje de Presencia \n5. Mensaje Privado \n6. Mensaje Grupal\n7. Log out \n"))
+            opc2 =  int(input("\nIngrese una opcion:\n1. Mostrar Usuarios \n2. Agregar Contacto \n3. Mostrar Usuario Especifico \n4. Mensaje de Presencia \n5. Mensaje Privado \n6. Mensaje Grupal\n7. Log out \n0. Notificaciones (mensajes recibidos, etc)\n"))
             if opc2 == 1:
                 #Mostrar Usuarios
                 await self.getUsers()
@@ -134,10 +145,15 @@ class Client(slixmpp.ClientXMPP):
                 #Mensaje de presencia
                 await self.presenceMessage()
             elif opc2 == 5:
-                pass
+                #Mensaje privado
+                await self.privateChat()
             elif opc2 == 6:
                 pass
             elif opc2 == 7:
                 print("Hasta luego!")
                 self.disconnect()
                 sigue = False
+            elif opc2 == 0:
+                self.send_presence()
+                self.get_roster()
+                await asyncio.sleep(1)
