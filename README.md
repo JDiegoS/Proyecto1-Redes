@@ -1,2 +1,4 @@
 # Proyecto1-Redes
-Cliente hecho en Python a base del protocolo XMPP
+XMPP chat client created with Python
+Run main.py file to run the program
+When asked for a username make sure to type in the domain (example@alumchat.xyz)
