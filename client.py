@@ -130,7 +130,6 @@ class Client(slixmpp.ClientXMPP):
         addr = input("Direccion del grupo (ejemplo@conference.alumchat.xyz): ")
         name = input("Nickname: ")
         self.plugin['xep_0045'].join_muc(room=addr, nick=name, pstatus='open', pfrom=self.boundjid.full)
-
         if opc3 == 1:
             await self.plugin['xep_0045'].set_affiliation(addr, jid = self.boundjid.full, affiliation = 'owner')
             print('\nGrupo creado\n')
